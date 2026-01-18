@@ -15,18 +15,17 @@ const server = http.createServer(app);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 
+// Database configuration for Railway
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'skillvault',
-  password: process.env.DB_PASSWORD || 'your_password',
-  port: process.env.DB_PORT || 5432
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Test database connection
+// Test database connection with better error handling
 pool.connect()
   .then(client => {
     console.log('✅ Successfully connected to PostgreSQL database');
+    console.log('🔗 Database URL exists:', !!process.env.DATABASE_URL);
     // Test query to verify database is responding
     return client.query('SELECT NOW()')
       .then(res => {
@@ -34,20 +33,31 @@ pool.connect()
         client.release();
       })
       .catch(err => {
-        console.error('❌ Database query test failed:', err);
+        console.error('❌ Database query test failed:', err.message);
         client.release();
-        process.exit(1);
+        // Don't exit in production, let the app start anyway
+        if (process.env.NODE_ENV !== 'production') {
+          process.exit(1);
+        }
       });
   })
   .catch(err => {
-    console.error('❌ Error connecting to the database:', err);
-    process.exit(1);
+    console.error('❌ Error connecting to the database:', err.message);
+    console.error('🔍 DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.error('🔍 NODE_ENV:', process.env.NODE_ENV);
+    // Don't exit in production, let the app start anyway
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
   });
 
 // Add error handler for pool errors
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(1);
+  console.error('Unexpected error on idle client', err.message);
+  // Don't exit in production
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
 });
 
 app.get('/', (req, res) => {
