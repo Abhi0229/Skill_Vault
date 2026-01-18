@@ -5,6 +5,7 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
+    "build": "echo 'Build complete'",
     "dev": "nodemon server/server.js",
     "setup-db": "node database/setup-database.js",
     "setup-projects": "node database/setup-projects-tables.js",
@@ -12,6 +13,9 @@
     "test-db": "node dev-tools/test-db-connection.js",
     "clear-db": "node dev-tools/clear-database.js",
     "debug": "node dev-tools/debug-server.js"
+  },
+  "engines": {
+    "node": "18.x"
   },
   "keywords": [
     "freelance",
